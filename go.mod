@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/hashicorp/raft v1.3.6 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
-	github.com/lib/pq v1.10.4 // indirect
+	github.com/lib/pq v1.10.5 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect

@@ -1,7 +1,7 @@
 package main
 
 import (
-	js "awesomeProject/Json_struct"
+	js "awesomeProject/JsonStruct"
 	"encoding/json"
 	"fmt"
 	"github.com/nats-io/nats.go"
@@ -17,7 +17,7 @@ func ErrorHandler(err error) {
 }
 
 func main() {
-	jsonFile := make(chan js.Json_struct, 5)
+	jsonFile := make(chan js.JsonStruct, 5)
 
 	connect, err := nats.Connect("nats://127.0.0.1:4445")
 	conn, err := nats.NewEncodedConn(connect, nats.JSON_ENCODER)
@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 	//conn.Publish("foo", jsonFile)
-	conn.Subscribe("server-upload-model-json-start", func(json_struct js.Json_struct) {
+	conn.Subscribe("server-upload-model-json-start", func(json_struct js.JsonStruct) {
 		jsonFile <- json_struct
 	})
 
@@ -51,7 +51,7 @@ func main() {
 }
 
 func Consumer() {
-	var jsonFile js.Json_struct
+	var jsonFile js.JsonStruct
 
 	open, err := os.Open("model.json")
 	ErrorHandler(err)

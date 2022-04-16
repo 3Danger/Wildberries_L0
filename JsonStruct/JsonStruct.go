@@ -1,8 +1,14 @@
-package Json_struct
+package JsonStruct
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"os"
+	"time"
+)
 
-type Json_struct struct {
+type JsonStruct struct {
 	OrderUid    string `json:"order_uid"`
 	TrackNumber string `json:"track_number"`
 	Entry       string `json:"entry"`
@@ -48,4 +54,40 @@ type Json_struct struct {
 	SmId              int       `json:"sm_id"`
 	DateCreated       time.Time `json:"date_created"`
 	OofShard          string    `json:"oof_shard"`
+}
+
+// Value Make the Attrs struct implement the driver.Valuer interface. This method
+// simply returns the JSON-encoded representation of the struct.
+func (j JsonStruct) Value() (driver.Value, error) {
+	return json.Marshal(j)
+}
+
+// Scan Make the Attrs struct implement the sql.Scanner interface. This method
+// simply decodes a JSON-encoded value into the struct fields.
+func (j *JsonStruct) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &j)
+}
+
+func (j *JsonStruct) FillFromFile(pathOfFile string) error {
+	open, ok := os.Open(pathOfFile)
+	if ok != nil {
+		return ok
+	}
+	decoder := json.NewDecoder(open)
+	ok = decoder.Decode(j)
+	if ok != nil {
+		return ok
+	}
+	ok = open.Close()
+	return ok
+}
+
+func NewFromFile(pathOfFile string) (*JsonStruct, error) {
+	var js JsonStruct
+	ok := js.FillFromFile(pathOfFile)
+	return &js, ok
 }
