@@ -12,6 +12,7 @@ type Postgresql struct {
 }
 
 // Connect user : csamuro, address : localhost
+// TODO check localhost:5432 in address
 func (p *Postgresql) Connect(user, password, address string) error {
 	var ok error
 	p.connStr = "postgresql://" + user + ":" + password + "@" + address + "/" + user + "?sslmode=disable"

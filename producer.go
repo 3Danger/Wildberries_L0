@@ -17,6 +17,7 @@ func ErrorHandler(err error) {
 }
 
 func main() {
+
 	jsonFile := make(chan js.JsonStruct, 5)
 
 	connect, err := nats.Connect("nats://127.0.0.1:4445")
@@ -26,9 +27,12 @@ func main() {
 		os.Exit(1)
 	}
 	//conn.Publish("foo", jsonFile)
-	conn.Subscribe("server-upload-model-json-start", func(json_struct js.JsonStruct) {
+	_, err = conn.Subscribe("server-upload-model-json-start", func(json_struct js.JsonStruct) {
 		jsonFile <- json_struct
 	})
+	if err != nil {
+		return
+	}
 
 	connect.Subscribe("server-upload-model-json-stop", func(msg *nats.Msg) {
 		fmt.Println("try to STOP")
