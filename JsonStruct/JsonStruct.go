@@ -91,3 +91,8 @@ func NewFromFile(pathOfFile string) (*JsonStruct, error) {
 	ok := js.FillFromFile(pathOfFile)
 	return &js, ok
 }
+
+func ParseBytes(data []byte) (js JsonStruct, ok error) {
+	ok = json.Unmarshal(data, &js)
+	return js, ok
+}
