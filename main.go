@@ -3,71 +3,95 @@ package main
 import (
 	js "awesomeProject/JsonStruct"
 	pq "awesomeProject/Postgresql"
-	ss "awesomeProject/StanType"
+	"awesomeProject/Utils"
 	"fmt"
-	"github.com/nats-io/stan.go"
+	stan "github.com/nats-io/stan.go"
 	"io/ioutil"
+	"log"
+	"time"
 )
 
-func main() {
-	jsonFile := make(chan []byte)
-	var connect ss.StanType
-	var db pq.Postgresql
-	err := db.Connect("csamuro", "irGJg$3.5.7", "localhost")
+func ReadFromDataBase(jsSlice *js.JsonSlice, DataBase *pq.Postgresql) {
+	var jsonData []byte
+	query, err := DataBase.GetRaw().Query("SELECT model FROM models;")
 	if err != nil {
-		fmt.Println(err)
+		log.Panic(err)
 		return
 	}
-	err = connect.ConnectStan("TEST-CLUSTER-ID", "client-1")
-	if err != nil {
-		fmt.Println(err)
-		return
+	for query.Next() {
+		err = query.Scan(&jsonData)
+		if err != nil {
+			log.Panic(err)
+		}
+		jsSlice.AddFromData(jsonData)
 	}
-	subscribe, err := connect.GetStan().Subscribe("test-consumer-jsonModel", func(msg *stan.Msg) {
-		jsonFile <- msg.Data
-	})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	producer()
-
-	jsonData := <-jsonFile
-	close(jsonFile)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	jsonObject, _ := js.ParseBytes(jsonData)
-	fmt.Printf("%+v", jsonObject)
-	err = subscribe.Close()
 }
 
-func producer() {
+func main() {
+
+	var (
+		//userDB, passDB, addrDB string
+		//clusterID              string
+		//modelSubj              string
+		//stopSubj               string
+		configs  Utils.Configs
+		dataBase pq.Postgresql
+		conn     stan.Conn
+	)
+	Utils.ParseArgs(&configs)
+	jModelSlice := js.NewJsonSlice()
+
+	err := dataBase.Connect(configs.UserDB, configs.PassDB, configs.AddrDB)
+	if err != nil {
+		log.Panic(err)
+		return
+	}
+	ReadFromDataBase(&jModelSlice, &dataBase)
+	conn, err = stan.Connect(configs.ClusterID, "server-1")
+	if err != nil {
+		log.Panic(err)
+		return
+	}
+	subscribe, err := conn.Subscribe(configs.ModelSubj, func(msg *stan.Msg) {
+		tmp, err := js.ParseBytes(msg.Data)
+		if err != nil {
+			log.Panic(err)
+			return
+		}
+		jModelSlice.Lock()
+		_, err = dataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", tmp)
+		if err != nil {
+			log.Panic(err)
+			return
+		}
+		jModelSlice.Add(&tmp)
+		jModelSlice.Unlock()
+	})
+	defer func(subscribe stan.Subscription) {
+		err := subscribe.Close()
+		if err != nil {
+			log.Panic(err)
+		}
+	}(subscribe)
+
+	//producer("client-1")
+	time.Sleep(time.Second * 3)
+	for _, x := range jModelSlice.GetSlice() {
+		fmt.Println(x.DateCreated)
+	}
+	time.Sleep(time.Minute)
+}
+
+func producer(clientID string) {
 	jsonByte, err := ioutil.ReadFile("model.json")
 	if err != nil {
-		fmt.Println(err)
+		log.Panic(err)
 		return
 	}
-
-	var connect ss.StanType
-	err = connect.ConnectStan("TEST-CLUSTER-ID", "client-2")
+	connect, _ := stan.Connect("TEST-CLUSTER-ID", clientID)
+	err = connect.Publish("jsonModel", jsonByte)
 	if err != nil {
-		fmt.Println(err)
+		log.Panic(err)
 		return
 	}
-
-	cont := connect.GetStan()
-	err = cont.Publish("test-consumer-jsonModel", jsonByte)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	//err = connect.GetStan().Publish("test-consumer", []byte("Hello world"))
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-
 }

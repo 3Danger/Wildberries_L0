@@ -7,7 +7,7 @@ import (
 )
 
 type Postgresql struct {
-	connStr string // := "postgresql://csamuro:irGJg$3.5.7@localhost/csamuro?sslmode=disable"
+	connStr string // := "postgresql://csamuro:PASSWORD@localhost/csamuro?sslmode=disable"
 	open    *sql.DB
 }
 
@@ -35,6 +35,6 @@ func (p *Postgresql) InsertModel(args ...any) error {
 	return err
 }
 
-func (p *Postgresql) Query(query string, args ...any) (*sql.Rows, error) {
-	return p.open.Query(query, args)
+func (p *Postgresql) GetRaw() *sql.DB {
+	return p.open
 }
