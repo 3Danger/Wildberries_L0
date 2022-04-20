@@ -1,9 +1,9 @@
-package BackEnd
+package Backend
 
 import (
-	"awesomeProject/srcs/BackEnd/JsonStruct"
-	pq "awesomeProject/srcs/BackEnd/Postgresql"
-	"awesomeProject/srcs/BackEnd/Utils"
+	"awesomeProject/srcs/Backend/JsonStruct"
+	pq "awesomeProject/srcs/Backend/Postgresql"
+	"awesomeProject/srcs/Backend/Utils"
 	"log"
 	"time"
 )
@@ -41,6 +41,8 @@ func ReadFromDataBase(bk *CommonBackend) {
 		if err != nil {
 			log.Panic(err)
 		}
+		bk.JModelSlice.Lock()
 		bk.JModelSlice.AddFromData(jsonData)
+		bk.JModelSlice.Unlock()
 	}
 }

@@ -1,9 +1,9 @@
-package BackEnd
+package Backend
 
 import (
-	JsonStruct2 "awesomeProject/srcs/BackEnd/JsonStruct"
-	"awesomeProject/srcs/BackEnd/Postgresql"
-	"awesomeProject/srcs/BackEnd/Utils"
+	JsonStruct2 "awesomeProject/srcs/Backend/JsonStruct"
+	"awesomeProject/srcs/Backend/Postgresql"
+	"awesomeProject/srcs/Backend/Utils"
 	"fmt"
 	"github.com/nats-io/stan.go"
 	"time"
@@ -21,7 +21,11 @@ func queueInserting(dataChan <-chan []byte, bk *CommonBackend, stop <-chan bool)
 		case data := <-dataChan:
 			model, ok := JsonStruct2.ParseBytes(data)
 			ok = Postgresql.TryDoIt(time.Second, 10, func() error {
-				_, err := bk.DataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", model)
+				//bk.DataBase.Lock()
+				//_, err := bk.DataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", model)
+				rows, err := bk.DataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", model)
+				rows.Close()
+				//bk.DataBase.Unlock()
 				return err
 			})
 			if ok != nil {
@@ -29,9 +33,11 @@ func queueInserting(dataChan <-chan []byte, bk *CommonBackend, stop <-chan bool)
 				fmt.Println(ok)
 				continue
 			}
+			bk.JModelSlice.Lock()
 			bk.JModelSlice.Add(&model)
+			bk.JModelSlice.Unlock()
 		case <-stop:
-			fmt.Println("Got signal from SELECT")
+			fmt.Println("\rGot signal from SELECT")
 			return
 		}
 	}

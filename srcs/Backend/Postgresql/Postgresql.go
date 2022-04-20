@@ -1,16 +1,18 @@
 package Postgresql
 
 import (
-	"awesomeProject/srcs/BackEnd/Utils"
+	"awesomeProject/srcs/Backend/Utils"
 	"database/sql"
 	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
+	"sync"
 	"time"
 )
 
 type Postgresql struct {
+	sync.RWMutex
 	connStr string // := "postgresql://csamuro:PASSWORD@localhost/csamuro?sslmode=disable"
 	open    *sql.DB
 }

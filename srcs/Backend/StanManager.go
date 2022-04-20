@@ -1,7 +1,7 @@
-package BackEnd
+package Backend
 
 import (
-	"awesomeProject/srcs/BackEnd/Utils"
+	"awesomeProject/srcs/Backend/Utils"
 	"fmt"
 	stan "github.com/nats-io/stan.go"
 	"log"
@@ -37,14 +37,14 @@ func (s *StanManager) Unscribe(subject *string) {
 	if subscribe != nil {
 		err := subscribe.Close()
 		if err != nil {
-			log.Print("unscribe err:", *subject, " ")
+			log.Print("Unscribe err:", *subject, " ")
 			log.Println(err)
 		} else {
-			fmt.Println("subject", *subject, "Unscribed")
+			fmt.Println("Subject:", *subject, "Unscribed")
 		}
 		delete(s.subjects, *subject)
 	} else {
-		fmt.Println("Subject", *subject, "not found")
+		fmt.Println("Subject:", *subject, "not found")
 	}
 }
 
@@ -55,6 +55,6 @@ func (s *StanManager) UnscribeAll() {
 			fmt.Println(err)
 			continue
 		}
-		fmt.Println(k, "Unscribed")
+		fmt.Println("Subject:", k, "Unscribed")
 	}
 }

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"awesomeProject/srcs/BackEnd"
-	"awesomeProject/srcs/BackEnd/Utils"
+	"awesomeProject/srcs/Backend"
+	"awesomeProject/srcs/Backend/Postgresql"
+	"awesomeProject/srcs/Backend/Utils"
 	"fmt"
 	"github.com/nats-io/stan.go"
 	"io/ioutil"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 )
 
 type Channels struct {
@@ -39,13 +41,13 @@ func main() {
 	channels := InitChan()
 	go SigHandlerClose(&channels)
 	config := Utils.ParseArgs()
-	backEnd := BackEnd.BackEnd(config, channels.StopQueueSelect)
+	backEnd := Backend.BackEnd(config, channels.StopQueueSelect)
 	defer backEnd.Close()
 	go producer("client-1")
 
 	go func() {
+		var input string
 		for {
-			var input string
 			fmt.Scanln(&input)
 			input = strings.ToLower(input)
 			if strings.Compare(input, "get") == 0 {
@@ -58,8 +60,8 @@ func main() {
 			}
 		}
 	}()
-
-	fmt.Println("Bye", <-channels.StopMain)
+	<-channels.StopMain
+	fmt.Println("\rGood bye!")
 }
 
 func producer(clientID string) {
@@ -69,11 +71,16 @@ func producer(clientID string) {
 		return
 	}
 	connect, _ := stan.Connect("TEST-CLUSTER-ID", clientID)
-	for i := 0; i < 10; i++ {
-		err = connect.Publish("jsonModel", jsonByte)
+	for i := 0; i < 1000; i++ {
+		fmt.Println("inserting:", i)
+		err = Postgresql.TryDoIt(time.Second, 10, func() (ok error) {
+			ok = connect.Publish("jsonModel", jsonByte)
+			return ok
+		})
 		if err != nil {
-			log.Panic(err)
+			log.Panic("producer err:", err)
 			return
 		}
 	}
+	fmt.Println("producers work is done")
 }
