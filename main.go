@@ -1,85 +1,65 @@
 package main
 
 import (
-	js "awesomeProject/JsonStruct"
-	pq "awesomeProject/Postgresql"
-	"awesomeProject/Utils"
+	"awesomeProject/srcs/BackEnd"
+	"awesomeProject/srcs/BackEnd/Utils"
 	"fmt"
-	stan "github.com/nats-io/stan.go"
+	"github.com/nats-io/stan.go"
 	"io/ioutil"
 	"log"
-	"time"
+	"os"
+	"os/signal"
+	"strings"
 )
 
-func ReadFromDataBase(jsSlice *js.JsonSlice, DataBase *pq.Postgresql) {
-	var jsonData []byte
-	query, err := DataBase.GetRaw().Query("SELECT model FROM models;")
-	if err != nil {
-		log.Panic(err)
-		return
-	}
-	for query.Next() {
-		err = query.Scan(&jsonData)
-		if err != nil {
-			log.Panic(err)
-		}
-		jsSlice.AddFromData(jsonData)
+type Channels struct {
+	StopQueueSelect chan bool
+	StopMain        chan bool
+	Interrupt       chan os.Signal
+}
+
+func InitChan() Channels {
+	var ch Channels
+	ch.StopQueueSelect = make(chan bool)
+	ch.StopMain = make(chan bool)
+	ch.Interrupt = make(chan os.Signal)
+	signal.Notify(ch.Interrupt, os.Interrupt)
+	return ch
+}
+
+func SigHandlerClose(channels *Channels) {
+	select {
+	case <-channels.Interrupt:
+		channels.StopQueueSelect <- true
+		channels.StopMain <- true
 	}
 }
 
 func main() {
+	channels := InitChan()
+	go SigHandlerClose(&channels)
+	config := Utils.ParseArgs()
+	backEnd := BackEnd.BackEnd(config, channels.StopQueueSelect)
+	defer backEnd.Close()
+	go producer("client-1")
 
-	var (
-		//userDB, passDB, addrDB string
-		//clusterID              string
-		//modelSubj              string
-		//stopSubj               string
-		configs  Utils.Configs
-		dataBase pq.Postgresql
-		conn     stan.Conn
-	)
-	Utils.ParseArgs(&configs)
-	jModelSlice := js.NewJsonSlice()
+	go func() {
+		for {
+			var input string
+			fmt.Scanln(&input)
+			input = strings.ToLower(input)
+			if strings.Compare(input, "get") == 0 {
+				for i, v := range backEnd.JModelSlice.GetSlice() {
+					fmt.Println(i, v.Locale)
+				}
+			} else if strings.Compare(input, "stop") == 0 {
+				channels.Interrupt <- os.Interrupt
+				return
+			}
+		}
+	}()
 
-	err := dataBase.Connect(configs.UserDB, configs.PassDB, configs.AddrDB)
-	if err != nil {
-		log.Panic(err)
-		return
-	}
-	ReadFromDataBase(&jModelSlice, &dataBase)
-	conn, err = stan.Connect(configs.ClusterID, "server-1")
-	if err != nil {
-		log.Panic(err)
-		return
-	}
-	subscribe, err := conn.Subscribe(configs.ModelSubj, func(msg *stan.Msg) {
-		tmp, err := js.ParseBytes(msg.Data)
-		if err != nil {
-			log.Panic(err)
-			return
-		}
-		jModelSlice.Lock()
-		_, err = dataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", tmp)
-		if err != nil {
-			log.Panic(err)
-			return
-		}
-		jModelSlice.Add(&tmp)
-		jModelSlice.Unlock()
-	})
-	defer func(subscribe stan.Subscription) {
-		err := subscribe.Close()
-		if err != nil {
-			log.Panic(err)
-		}
-	}(subscribe)
-
-	//producer("client-1")
-	time.Sleep(time.Second * 3)
-	for _, x := range jModelSlice.GetSlice() {
-		fmt.Println(x.DateCreated)
-	}
-	time.Sleep(time.Minute)
+	fmt.Println("Bye", <-channels.StopMain)
 }
 
 func producer(clientID string) {
@@ -89,9 +69,11 @@ func producer(clientID string) {
 		return
 	}
 	connect, _ := stan.Connect("TEST-CLUSTER-ID", clientID)
-	err = connect.Publish("jsonModel", jsonByte)
-	if err != nil {
-		log.Panic(err)
-		return
+	for i := 0; i < 10; i++ {
+		err = connect.Publish("jsonModel", jsonByte)
+		if err != nil {
+			log.Panic(err)
+			return
+		}
 	}
 }
