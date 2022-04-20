@@ -37,7 +37,7 @@ func queueInserting(dataChan <-chan []byte, bk *CommonBackend, stop <-chan bool)
 			bk.JModelSlice.Add(&model)
 			bk.JModelSlice.Unlock()
 		case <-stop:
-			fmt.Println("\rGot signal from SELECT")
+			//fmt.Println("\rGot signal from SELECT")
 			return
 		}
 	}

@@ -21,7 +21,7 @@ type Postgresql struct {
 // TODO check localhost:5432 in address
 func (p *Postgresql) Connect(cnf *Utils.Configs, s time.Duration) {
 	var ok error
-	p.connStr = "postgresql://" + cnf.UserDB + ":" + cnf.PassDB + "@" + cnf.AddrDB + "/" + cnf.UserDB + "?sslmode=disable"
+	p.connStr = "postgresql://" + cnf.UserDB + ":" + cnf.PassDB + "@" + cnf.AddrDB + "/" + cnf.NameDB + "?sslmode=disable"
 	ok = TryDoIt(s, 10, func() error {
 		p.open, ok = sql.Open("postgres", p.connStr)
 		return ok

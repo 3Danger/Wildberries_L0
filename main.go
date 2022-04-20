@@ -39,29 +39,31 @@ func SigHandlerClose(channels *Channels) {
 
 func main() {
 	channels := InitChan()
-	go SigHandlerClose(&channels)
 	config := Utils.ParseArgs()
-	backEnd := Backend.BackEnd(config, channels.StopQueueSelect)
-	defer backEnd.Close()
-	go producer("client-1")
+	backend := Backend.BackEnd(config, channels.StopQueueSelect)
+	defer backend.Close()
 
-	go func() {
-		var input string
-		for {
-			fmt.Scanln(&input)
-			input = strings.ToLower(input)
-			if strings.Compare(input, "get") == 0 {
-				for i, v := range backEnd.JModelSlice.GetSlice() {
-					fmt.Println(i, v.Locale)
-				}
-			} else if strings.Compare(input, "stop") == 0 {
-				channels.Interrupt <- os.Interrupt
-				return
-			}
-		}
-	}()
+	go SigHandlerClose(&channels)
+	go producer("client-1")
+	go DebugHandler(channels, backend)
 	<-channels.StopMain
 	fmt.Println("\rGood bye!")
+}
+
+func DebugHandler(channels Channels, backend *Backend.CommonBackend) {
+	var input string
+	for {
+		fmt.Scanln(&input)
+		input = strings.ToLower(input)
+		if strings.Compare(input, "get") == 0 {
+			for i, v := range backend.JModelSlice.GetSlice() {
+				fmt.Println(i, v.Locale)
+			}
+		} else if strings.Compare(input, "stop") == 0 {
+			channels.Interrupt <- os.Interrupt
+			return
+		}
+	}
 }
 
 func producer(clientID string) {
@@ -72,7 +74,7 @@ func producer(clientID string) {
 	}
 	connect, _ := stan.Connect("TEST-CLUSTER-ID", clientID)
 	for i := 0; i < 1000; i++ {
-		fmt.Println("inserting:", i)
+		//fmt.Println("inserting:", i)
 		err = Postgresql.TryDoIt(time.Second, 10, func() (ok error) {
 			ok = connect.Publish("jsonModel", jsonByte)
 			return ok
