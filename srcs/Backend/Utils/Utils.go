@@ -12,6 +12,14 @@ type Channels struct {
 	Interrupt       chan os.Signal
 }
 
+func SigHandlerClose(channels *Channels) {
+	select {
+	case <-channels.Interrupt:
+		channels.StopQueueSelect <- true
+		channels.StopMain <- true
+	}
+}
+
 func InitChan() Channels {
 	var ch Channels
 	ch.StopQueueSelect = make(chan bool)

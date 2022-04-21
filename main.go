@@ -13,21 +13,13 @@ import (
 	"time"
 )
 
-func SigHandlerClose(channels *ut.Channels) {
-	select {
-	case <-channels.Interrupt:
-		channels.StopQueueSelect <- true
-		channels.StopMain <- true
-	}
-}
-
 func main() {
 	channels := ut.InitChan()
 	config := ut.ParseArgs()
 	backend := Backend.BackEnd(config, channels.StopQueueSelect)
 	defer backend.Close()
 
-	go SigHandlerClose(&channels)
+	go ut.SigHandlerClose(&channels)
 	go producer("client-1", config.ClusterID)
 	go DebugHandler(channels, backend)
 	<-channels.StopMain
@@ -57,7 +49,7 @@ func producer(clientID, clusterID string) {
 		return
 	}
 	connect, _ := stan.Connect(clusterID, clientID)
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100000; i++ {
 		//fmt.Println("inserting:", i)
 		err = Postgresql.TryDoIt(time.Second, 10, func() (ok error) {
 			ok = connect.Publish("jsonModel", jsonByte)
