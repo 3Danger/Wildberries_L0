@@ -21,7 +21,7 @@ func main() {
 	backend := Backend.BackEnd(config)
 	defer backend.Close()
 
-	go producer("client-1", config.ClusterID)
+	go producer("client-1", config.ClusterID, config.ModelSubj)
 	go DebugHandler(sigInterrupt, backend)
 
 	<-sigInterrupt
@@ -44,7 +44,7 @@ func DebugHandler(sigQuit chan<- os.Signal, backend *Backend.CommonBackend) {
 	}
 }
 
-func producer(clientID, clusterID string) {
+func producer(clientID, clusterID, subject string) {
 	jsonByte, err := ioutil.ReadFile("model.json")
 	if err != nil {
 		log.Panic(err)
@@ -52,9 +52,8 @@ func producer(clientID, clusterID string) {
 	}
 	connect, _ := stan.Connect(clusterID, clientID)
 	for i := 0; i < 100000; i++ {
-		//fmt.Println("inserting:", i)
 		err = ut.TryDoIt(time.Second, 10, func() (ok error) {
-			ok = connect.Publish("jsonModel", jsonByte)
+			ok = connect.Publish(subject, jsonByte)
 			return ok
 		})
 		if err != nil {

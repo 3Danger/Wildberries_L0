@@ -7,12 +7,11 @@ import (
 
 type JsonSlice struct {
 	sync.RWMutex
-	counter   uint
 	sliceJson []*JsonStruct
 }
 
 func NewJsonSlice() (j JsonSlice) {
-	return JsonSlice{sync.RWMutex{}, 0, make([]*JsonStruct, 0, 10)}
+	return JsonSlice{sync.RWMutex{}, make([]*JsonStruct, 0, 10)}
 }
 
 func (j *JsonSlice) AddFromFile(fileName string) (ok error) {
