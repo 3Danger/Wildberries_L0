@@ -3,7 +3,6 @@ package Postgresql
 import (
 	"awesomeProject/srcs/Backend/Utils"
 	"database/sql"
-	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
@@ -40,14 +39,6 @@ func (p *Postgresql) Disconnect() {
 	} else {
 		fmt.Println("DataBase disconnected")
 	}
-}
-
-func (p *Postgresql) InsertModel(args ...any) error {
-	if p.open == nil {
-		return errors.New("not connected to sql")
-	}
-	_, err := p.open.Exec("INSERT INTO models (model) VALUES ($1)", args)
-	return err
 }
 
 func (p *Postgresql) GetRaw() *sql.DB {

@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 )
 
@@ -22,26 +21,9 @@ func main() {
 	defer backend.Close()
 
 	go producer("client-1", config.ClusterID, config.ModelSubj)
-	go DebugHandler(sigInterrupt, backend)
 
 	<-sigInterrupt
 	fmt.Println("\rGood bye!")
-}
-
-func DebugHandler(sigQuit chan<- os.Signal, backend *Backend.CommonBackend) {
-	var input string
-	for {
-		fmt.Scanln(&input)
-		input = strings.ToLower(input)
-		if strings.Compare(input, "get") == 0 {
-			for i, v := range backend.JModelSlice.GetSlice() {
-				fmt.Println(i, v.Locale)
-			}
-		} else if strings.Compare(input, "stop") == 0 {
-			sigQuit <- os.Interrupt
-			return
-		}
-	}
 }
 
 func producer(clientID, clusterID, subject string) {
@@ -61,5 +43,5 @@ func producer(clientID, clusterID, subject string) {
 			return
 		}
 	}
-	fmt.Println("producers work is done")
+	//fmt.Println("\r\nproducers work is done")
 }
