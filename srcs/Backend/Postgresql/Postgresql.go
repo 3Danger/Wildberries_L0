@@ -7,12 +7,11 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
-	"sync"
 	"time"
 )
 
 type Postgresql struct {
-	sync.RWMutex
+	//sync.RWMutex
 	connStr string // := "postgresql://csamuro:PASSWORD@localhost/csamuro?sslmode=disable"
 	open    *sql.DB
 }

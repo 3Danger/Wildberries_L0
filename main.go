@@ -3,33 +3,17 @@ package main
 import (
 	"awesomeProject/srcs/Backend"
 	"awesomeProject/srcs/Backend/Postgresql"
-	"awesomeProject/srcs/Backend/Utils"
+	ut "awesomeProject/srcs/Backend/Utils"
 	"fmt"
 	"github.com/nats-io/stan.go"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/signal"
 	"strings"
 	"time"
 )
 
-type Channels struct {
-	StopQueueSelect chan bool
-	StopMain        chan bool
-	Interrupt       chan os.Signal
-}
-
-func InitChan() Channels {
-	var ch Channels
-	ch.StopQueueSelect = make(chan bool)
-	ch.StopMain = make(chan bool)
-	ch.Interrupt = make(chan os.Signal)
-	signal.Notify(ch.Interrupt, os.Interrupt)
-	return ch
-}
-
-func SigHandlerClose(channels *Channels) {
+func SigHandlerClose(channels *ut.Channels) {
 	select {
 	case <-channels.Interrupt:
 		channels.StopQueueSelect <- true
@@ -38,19 +22,19 @@ func SigHandlerClose(channels *Channels) {
 }
 
 func main() {
-	channels := InitChan()
-	config := Utils.ParseArgs()
+	channels := ut.InitChan()
+	config := ut.ParseArgs()
 	backend := Backend.BackEnd(config, channels.StopQueueSelect)
 	defer backend.Close()
 
 	go SigHandlerClose(&channels)
-	go producer("client-1")
+	go producer("client-1", config.ClusterID)
 	go DebugHandler(channels, backend)
 	<-channels.StopMain
 	fmt.Println("\rGood bye!")
 }
 
-func DebugHandler(channels Channels, backend *Backend.CommonBackend) {
+func DebugHandler(channels ut.Channels, backend *Backend.CommonBackend) {
 	var input string
 	for {
 		fmt.Scanln(&input)
@@ -66,13 +50,13 @@ func DebugHandler(channels Channels, backend *Backend.CommonBackend) {
 	}
 }
 
-func producer(clientID string) {
+func producer(clientID, clusterID string) {
 	jsonByte, err := ioutil.ReadFile("model.json")
 	if err != nil {
 		log.Panic(err)
 		return
 	}
-	connect, _ := stan.Connect("TEST-CLUSTER-ID", clientID)
+	connect, _ := stan.Connect(clusterID, clientID)
 	for i := 0; i < 1000; i++ {
 		//fmt.Println("inserting:", i)
 		err = Postgresql.TryDoIt(time.Second, 10, func() (ok error) {

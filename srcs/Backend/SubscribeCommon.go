@@ -21,11 +21,8 @@ func queueInserting(dataChan <-chan []byte, bk *CommonBackend, stop <-chan bool)
 		case data := <-dataChan:
 			model, ok := JsonStruct2.ParseBytes(data)
 			ok = Postgresql.TryDoIt(time.Second, 10, func() error {
-				//bk.DataBase.Lock()
-				//_, err := bk.DataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", model)
 				rows, err := bk.DataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", model)
 				rows.Close()
-				//bk.DataBase.Unlock()
 				return err
 			})
 			if ok != nil {
