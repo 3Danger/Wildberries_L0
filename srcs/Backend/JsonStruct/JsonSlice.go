@@ -2,7 +2,6 @@ package JsonStruct
 
 import (
 	"encoding/json"
-	"log"
 	"sync"
 )
 
@@ -28,13 +27,13 @@ func (j *JsonSlice) AddFromFile(fileName string) (ok error) {
 func (j *JsonSlice) Add(jsonModel ...*JsonStruct) {
 	j.sliceJson = append(j.sliceJson, jsonModel...)
 }
-func (j *JsonSlice) AddFromData(jsonData []byte) {
+func (j *JsonSlice) AddFromData(jsonData []byte) (ok error) {
 	var jsonModel JsonStruct
-	err := json.Unmarshal(jsonData, &jsonModel)
-	if err != nil {
-		log.Panic(err)
+	ok = json.Unmarshal(jsonData, &jsonModel)
+	if ok == nil {
+		j.sliceJson = append(j.sliceJson, &jsonModel)
 	}
-	j.sliceJson = append(j.sliceJson, &jsonModel)
+	return ok
 }
 
 func (j *JsonSlice) GetSlice() []*JsonStruct {

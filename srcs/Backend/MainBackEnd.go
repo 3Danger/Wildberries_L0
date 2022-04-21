@@ -14,13 +14,13 @@ type CommonBackend struct {
 	JModelSlice JsonStruct.JsonSlice
 }
 
-func BackEnd(Configs *Utils.Configs, StopQueueSelect chan bool) *CommonBackend {
+func BackEnd(Configs *Utils.Configs) *CommonBackend {
 	var backend CommonBackend
 	backend.DataBase.Connect(Configs, time.Second*3)
 	backend.JModelSlice = JsonStruct.NewJsonSlice()
 	ReadFromDataBase(&backend)
 	backend.Connect = NewConnect(Configs, "server-1")
-	ModelSubscribe(&backend, Configs, StopQueueSelect)
+	ModelSubscribe(&backend, Configs.ModelSubj)
 	return &backend
 }
 
@@ -42,7 +42,11 @@ func ReadFromDataBase(bk *CommonBackend) {
 			log.Panic(err)
 		}
 		bk.JModelSlice.Lock()
-		bk.JModelSlice.AddFromData(jsonData)
+		err := bk.JModelSlice.AddFromData(jsonData)
 		bk.JModelSlice.Unlock()
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}
 }

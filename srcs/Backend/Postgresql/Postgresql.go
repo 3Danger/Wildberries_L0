@@ -21,7 +21,7 @@ type Postgresql struct {
 func (p *Postgresql) Connect(cnf *Utils.Configs, s time.Duration) {
 	var ok error
 	p.connStr = "postgresql://" + cnf.UserDB + ":" + cnf.PassDB + "@" + cnf.AddrDB + "/" + cnf.NameDB + "?sslmode=disable"
-	ok = TryDoIt(s, 10, func() error {
+	ok = Utils.TryDoIt(s, 10, func() error {
 		p.open, ok = sql.Open("postgres", p.connStr)
 		return ok
 	},
@@ -31,16 +31,6 @@ func (p *Postgresql) Connect(cnf *Utils.Configs, s time.Duration) {
 	} else {
 		log.Panic(ok)
 	}
-}
-
-func TryDoIt(t time.Duration, attempts uint8, f func() error) (ok error) {
-	ok = f()
-	for ok != nil && attempts != 0 {
-		time.Sleep(t)
-		ok = f()
-		attempts--
-	}
-	return ok
 }
 
 func (p *Postgresql) Disconnect() {

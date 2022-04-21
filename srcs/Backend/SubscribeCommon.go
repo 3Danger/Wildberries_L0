@@ -1,41 +1,22 @@
 package Backend
 
 import (
-	JsonStruct2 "awesomeProject/srcs/Backend/JsonStruct"
-	"awesomeProject/srcs/Backend/Postgresql"
-	"awesomeProject/srcs/Backend/Utils"
-	"fmt"
 	"github.com/nats-io/stan.go"
-	"time"
+	"log"
 )
 
-func ModelSubscribe(bk *CommonBackend, Configs *Utils.Configs, stop <-chan bool) {
-	dataChannel := make(chan []byte, 1000)
-	bk.Connect.NewSubscribe(&Configs.ModelSubj, func(msg *stan.Msg) { dataChannel <- msg.Data })
-	go queueInserting(dataChannel, bk, stop)
-}
-
-func queueInserting(dataChan <-chan []byte, bk *CommonBackend, stop <-chan bool) {
-	for {
-		select {
-		case data := <-dataChan:
-			model, ok := JsonStruct2.ParseBytes(data)
-			ok = Postgresql.TryDoIt(time.Second, 10, func() error {
-				rows, err := bk.DataBase.GetRaw().Query("INSERT INTO models (model) VALUES ($1)", model)
-				rows.Close()
-				return err
-			})
-			if ok != nil {
-				fmt.Println("can't insert model from server")
-				fmt.Println(ok)
-				continue
-			}
-			bk.JModelSlice.Lock()
-			bk.JModelSlice.Add(&model)
-			bk.JModelSlice.Unlock()
-		case <-stop:
-			//fmt.Println("\rGot signal from SELECT")
+func ModelSubscribe(bk *CommonBackend, subject string) {
+	bk.Connect.NewSubscribe(&subject, func(msg *stan.Msg) {
+		_, ok := bk.DataBase.GetRaw().Exec("INSERT INTO models (model) VALUES ($1)", msg.Data)
+		if ok != nil {
+			log.Panic(ok)
 			return
 		}
-	}
+		bk.JModelSlice.Lock()
+		defer bk.JModelSlice.Unlock()
+		ok = bk.JModelSlice.AddFromData(msg.Data)
+		if ok != nil {
+			log.Println(ok)
+		}
+	})
 }

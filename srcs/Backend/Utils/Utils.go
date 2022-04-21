@@ -2,32 +2,8 @@ package Utils
 
 import (
 	"flag"
-	"os"
-	"os/signal"
+	"time"
 )
-
-type Channels struct {
-	StopQueueSelect chan bool
-	StopMain        chan bool
-	Interrupt       chan os.Signal
-}
-
-func SigHandlerClose(channels *Channels) {
-	select {
-	case <-channels.Interrupt:
-		channels.StopQueueSelect <- true
-		channels.StopMain <- true
-	}
-}
-
-func InitChan() Channels {
-	var ch Channels
-	ch.StopQueueSelect = make(chan bool)
-	ch.StopMain = make(chan bool)
-	ch.Interrupt = make(chan os.Signal)
-	signal.Notify(ch.Interrupt, os.Interrupt)
-	return ch
-}
 
 type Configs struct {
 	UserDB, PassDB, AddrDB, NameDB string
@@ -46,4 +22,14 @@ func ParseArgs() (c *Configs) {
 	//flag.StringVar(&c.stopSubj, "ss", "stop", "Subject of channel to notify for stop listening")
 	flag.Parse()
 	return c
+}
+
+func TryDoIt(t time.Duration, attempts uint8, f func() error) (ok error) {
+	ok = f()
+	for ok != nil && attempts != 0 {
+		time.Sleep(t)
+		ok = f()
+		attempts--
+	}
+	return ok
 }
