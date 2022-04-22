@@ -2,7 +2,6 @@ package Backend
 
 import (
 	"awesomeProject/srcs/Backend/JsonStruct"
-	"encoding/json"
 	"fmt"
 	"github.com/nats-io/stan.go"
 	"log"
@@ -11,12 +10,12 @@ import (
 func ModelSubscribe(bk *CommonBackend, subject string) {
 	fmt.Println("\r Count elem in cache before:", len(bk.JModelSlice.GetSlice()), "\b")
 	bk.Connect.NewSubscribe(&subject, func(msg *stan.Msg) {
-		var js JsonStruct.JsonStruct
-		if json.Unmarshal(msg.Data, &js) != nil {
-			fmt.Println("json data invalid")
+		_, ok := JsonStruct.ParseBytes(msg.Data)
+		if ok != nil {
+			fmt.Println("incoming json model is invalid")
 			return
 		}
-		_, ok := bk.DataBase.GetRaw().Exec("INSERT INTO models (model) VALUES ($1)", msg.Data)
+		_, ok = bk.DataBase.GetRaw().Exec("INSERT INTO models (model) VALUES ($1)", msg.Data)
 		if ok != nil {
 			log.Println(ok)
 			return

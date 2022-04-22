@@ -23,8 +23,7 @@ func (p *Postgresql) Connect(cnf *Utils.Configs, s time.Duration) {
 	ok = Utils.TryDoIt(s, 10, func() error {
 		p.open, ok = sql.Open("postgres", p.connStr)
 		return ok
-	},
-	)
+	})
 	if ok == nil {
 		fmt.Println("DataBase connected")
 	} else {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"time"
 )
 
@@ -92,7 +93,14 @@ func NewFromFile(pathOfFile string) (*JsonStruct, error) {
 	return &js, ok
 }
 
-func ParseBytes(data []byte) (js JsonStruct, ok error) {
+func ParseBytes(data []byte) (js *JsonStruct, ok error) {
+	var cmp JsonStruct
+	js = new(JsonStruct)
 	ok = json.Unmarshal(data, &js)
+	if ok == nil {
+		if reflect.DeepEqual(*js, cmp) {
+			return nil, errors.New("err: json model is empty")
+		}
+	}
 	return js, ok
 }
