@@ -13,14 +13,14 @@
     <body class="d-flex h-100 text-center text-white bg-dark">
         <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
             <main class="px-3">
-                <h1>Введите id.</h1>
-<!--                <h3>в базе {{ . }} моделей</h3>-->
+                <h1>Введите id</h1>
+                <h3>в базе {{ .Length }} моделей json</h3>
                 <form action="/" method="post">
                     <input name="input_id" id="input_id" required type="search" placeholder="Введите id">
                     <button style="width: 150px" >GO!</button>
                 </form>
             </main>
-            <div style="white-space: pre" align="left" >{{ . }}</div>
+            <div style="white-space: pre" align="left" >{{ .Model }}</div>
 
 <!--            <footer class="mt-auto text-white-50">-->
 <!--                <p>Cover template for <a href="https://getbootstrap.com/" class="text-white">Bootstrap</a>, by <a href="https://twitter.com/mdo" class="text-white">@mdo</a>.</p>-->

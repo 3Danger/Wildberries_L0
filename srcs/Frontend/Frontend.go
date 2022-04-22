@@ -4,11 +4,24 @@ import (
 	"awesomeProject/srcs/Backend/JsonStruct"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"text/template"
 )
+
+type InfoModels struct {
+	Model  string
+	Length string
+}
+
+func ModelToStriong(js *JsonStruct.JsonSlice, id int) string {
+	buf := bytes.Buffer{}
+	marshal, _ := json.Marshal(js.GetSlice()[id])
+	_ = json.Indent(&buf, marshal, "", "\t")
+	return buf.String()
+}
 
 func Handler(js *JsonStruct.JsonSlice) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -22,18 +35,17 @@ func Handler(js *JsonStruct.JsonSlice) {
 		value := r.FormValue("input_id")
 		id, ok := strconv.Atoi(value)
 
+		info := InfoModels{"", fmt.Sprint(len(js.GetSlice()))}
 		if value == "" {
-			_ = tmpl.Execute(w, "")
+			info.Model = ""
 		} else if ok != nil {
-			_ = tmpl.Execute(w, "Не корректное значение!")
+			info.Model = "Не корректное значение!"
 		} else if id >= len(js.GetSlice()) || id < 0 {
-			_ = tmpl.Execute(w, "Значение выходит за пределы допустимого!")
+			info.Model = "Значение выходит за пределы допустимого!"
 		} else {
-			marshal, _ := json.Marshal(js.GetSlice()[id])
-			b := new(bytes.Buffer)
-			_ = json.Indent(b, marshal, "", "\t")
-			_ = tmpl.Execute(w, b.String())
+			info.Model = ModelToStriong(js, id)
 		}
+		_ = tmpl.Execute(w, info)
 	})
 
 	ok := http.ListenAndServe(":8080", nil)
