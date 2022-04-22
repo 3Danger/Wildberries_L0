@@ -3,29 +3,21 @@ package main
 import (
 	"awesomeProject/srcs/Backend"
 	ut "awesomeProject/srcs/Backend/Utils"
-	"fmt"
+	"awesomeProject/srcs/Frontend"
 	"github.com/nats-io/stan.go"
 	"io/ioutil"
 	"log"
-	"os"
-	"os/signal"
 	"time"
 )
 
 func main() {
-	sigInterrupt := make(chan os.Signal)
-	signal.Notify(sigInterrupt, os.Interrupt)
-
 	config := ut.ParseArgs()
 	backend := Backend.BackEnd(config)
 	defer backend.Close()
-
 	go producer("client-1", config.ClusterID, config.ModelSubj)
+	Frontend.Handler(&backend.JModelSlice)
 
-	<-sigInterrupt
-	fmt.Println("\rGood bye!")
 }
-
 func producer(clientID, clusterID, subject string) {
 	jsonByte, err := ioutil.ReadFile("model.json")
 	if err != nil {
@@ -33,7 +25,7 @@ func producer(clientID, clusterID, subject string) {
 		return
 	}
 	connect, _ := stan.Connect(clusterID, clientID)
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 10; i++ {
 		err = ut.TryDoIt(time.Second, 10, func() (ok error) {
 			ok = connect.Publish(subject, jsonByte)
 			return ok
