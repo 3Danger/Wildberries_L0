@@ -30,11 +30,8 @@ func Handler(js *JsonStruct.JsonSlice) {
 			log.Panic(err)
 			return
 		}
-		//_ = tmpl.Execute(w, len(js.GetSlice()))
-
 		value := r.FormValue("input_id")
 		id, ok := strconv.Atoi(value)
-
 		info := InfoModels{"", fmt.Sprint(len(js.GetSlice()))}
 		if value == "" {
 			info.Model = ""
@@ -47,9 +44,5 @@ func Handler(js *JsonStruct.JsonSlice) {
 		}
 		_ = tmpl.Execute(w, info)
 	})
-
-	ok := http.ListenAndServe(":8080", nil)
-	if ok != nil {
-		log.Panic(ok)
-	}
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
