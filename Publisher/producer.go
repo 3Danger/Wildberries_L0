@@ -56,7 +56,6 @@ func main() {
 				time.Sleep(time.Millisecond * time.Duration(sleep))
 			}
 		}
-		fmt.Println("\n", repeat)
 		repeat--
 	}
 }

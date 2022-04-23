@@ -53,16 +53,33 @@ func ReadFromDataBase(bk *CommonBackend) {
 	}
 }
 
+//TODO Проверка на наличие элемента в кеше
+//func Find(jsonSlice []*JsonStruct.JsonStruct, jsonStruct *JsonStruct.JsonStruct) int {
+//	for i, v := range jsonSlice {
+//		if v.OrderUid == jsonStruct.OrderUid {
+//			if reflect.DeepEqual(*v, *jsonStruct) {
+//				return i
+//			}
+//		}
+//	}
+//	return -1
+//}
+
 // ModelSubscribe Можно гораздо ускорить принятие данных путем создания -
 //- отдельных структур (для каждого клиента) со своими мютексами и слайсами
 func ModelSubscribe(bk *CommonBackend, subject string) {
-	fmt.Println("\r Count elem in cache before:", len(bk.JModelSlice.GetSlice()), "\b")
+	fmt.Println("\033[36m"+"Count elem in cache before:", len(bk.JModelSlice.GetSlice()), "\033[0m")
 	bk.ConnectStan.NewSubscribe(&subject, func(msg *stan.Msg) {
-		_, ok := JsonStruct.ParseBytes(msg.Data)
+		js, ok := JsonStruct.ParseBytes(msg.Data)
 		if ok != nil {
-			fmt.Println("incoming json model is invalid")
+			fmt.Println("\u001B[31m" + "incoming json model is invalid" + "\033[0m")
 			return
 		}
+		//TODO при необходимости исклчать повторяющиеся данные
+		//if Find(bk.JModelSlice.GetSlice(), js) >= 0 {
+		//	fmt.Println("\033[34m"+"skipped"+"\033[0m", js.OrderUid, "\033[34m"+"because it exist in cache"+"\033[0m")
+		//	return
+		//}
 		_, ok = bk.DataBase.GetRaw().Exec("INSERT INTO models (model) VALUES ($1)", msg.Data)
 		if ok != nil {
 			log.Println(ok)
@@ -70,10 +87,7 @@ func ModelSubscribe(bk *CommonBackend, subject string) {
 		}
 		bk.JModelSlice.Lock()
 		defer bk.JModelSlice.Unlock()
-		ok = bk.JModelSlice.AddFromData(msg.Data)
-		fmt.Println("Count elem in cache after: ", len(bk.JModelSlice.GetSlice()), "\b")
-		if ok != nil {
-			log.Println(ok)
-		}
+		bk.JModelSlice.Add(js)
+		fmt.Println("\033[32m"+"Count elem in cache after: ", len(bk.JModelSlice.GetSlice()), "\b"+"\033[0m")
 	})
 }
