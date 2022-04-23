@@ -12,15 +12,15 @@ type StanManager struct {
 	subjects map[string]stan.Subscription
 }
 
-func NewConnect(c *Utils.Configs, clientID string) (stanManager *StanManager) {
+func NewConnect(c *Utils.Configs) (stanManager *StanManager) {
 	var ok error
 	stanManager = &StanManager{}
-	stanManager.connect, ok = stan.Connect(c.ClusterID, clientID)
+	stanManager.connect, ok = stan.Connect(c.ClusterID, c.ClientID)
 	if ok != nil {
 		log.Panic(ok)
 	}
 	fmt.Println("\033[34m"+"clusterID:"+"\033[0m", c.ClusterID+",",
-		"\033[34m"+"clientID:"+"\033[0m", clientID,
+		"\033[34m"+"clientID:"+"\033[0m", c.ClientID,
 		"\033[32m"+"connected!"+"\033[0m")
 	stanManager.subjects = make(map[string]stan.Subscription, 0)
 	return stanManager

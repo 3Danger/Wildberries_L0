@@ -21,7 +21,7 @@ func BackEnd(Configs *Utils.Configs) *CommonBackend {
 	backend.DataBase.Connect(Configs, time.Second*3)
 	backend.JModelSlice = JsonStruct.NewJsonSlice()
 	ReadFromDataBase(&backend)
-	backend.ConnectStan = NewConnect(Configs, "server-1")
+	backend.ConnectStan = NewConnect(Configs)
 	ModelSubscribe(&backend, Configs.ModelSubj)
 	return &backend
 }
