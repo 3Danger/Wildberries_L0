@@ -10,7 +10,7 @@ sleep 2
 echo "Запускаю Сервис"
 sleep 1
 
-go run main.go &
+./Service &
 
 sleep 2
 echo "Сейчас будем публиковать рандомные Json файлы"
@@ -23,7 +23,9 @@ sleep 1
 echo "Поехали! запускаю "
 sleep 1
 
-./testPublisher.sh &> /dev/null
+./PublisherServ -j ./json -ms 300 &> /dev/null
+
+sleep 1
 
 echo "Сервис работает в фоновом режиме.
 Теперь можно тестировать в браузере по адресу:
