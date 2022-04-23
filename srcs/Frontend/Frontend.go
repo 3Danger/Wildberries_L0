@@ -37,10 +37,11 @@ func Handler(js *JsonStruct.JsonSlice) {
 			info.Model = ""
 		} else if ok != nil {
 			info.Model = "Не корректное значение!"
-		} else if id >= len(js.GetSlice()) || id < 0 {
-			info.Model = "Значение выходит за пределы допустимого!"
+		} else if id > len(js.GetSlice()) || id <= 0 {
+			info.Model = "Значение выходит за пределы допустимого!\n" +
+				fmt.Sprintf("Введите ID в диапазоне от 1 до %d", len(js.GetSlice()))
 		} else {
-			info.Model = ModelToStriong(js, id)
+			info.Model = ModelToStriong(js, id-1)
 		}
 		_ = tmpl.Execute(w, info)
 	})

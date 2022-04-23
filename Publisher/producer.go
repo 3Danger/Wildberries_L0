@@ -1,7 +1,6 @@
 package main
 
 import (
-	ut "awesomeProject/srcs/Backend/Utils"
 	"flag"
 	"fmt"
 	"github.com/nats-io/stan.go"
@@ -30,10 +29,13 @@ func ReadAll(path string) (res *[][]byte, ok error) {
 
 func main() {
 	var clientID, clusterID, subject, jsonPath string
+	var repeat, sleep int
 	flag.StringVar(&clientID, "c", "producer-1", "client name")
 	flag.StringVar(&clusterID, "cid", "test-cluster", "cluster id for connect")
 	flag.StringVar(&subject, "subj", "jsonModel", "client name")
 	flag.StringVar(&jsonPath, "j", "./json", "folder with contains .json")
+	flag.IntVar(&repeat, "r", 1, "number of repetitions")
+	flag.IntVar(&sleep, "ms", 0, "sleeping time (ms)")
 	flag.Parse()
 
 	models, ok := ReadAll(jsonPath)
@@ -42,16 +44,19 @@ func main() {
 		return
 	}
 	connect, _ := stan.Connect(clusterID, clientID)
-	for i, v := range *models {
-		ok = ut.TryDoIt(time.Second, 10, func() (ok error) {
+	for repeat > 0 {
+		for i, v := range *models {
 			ok = connect.Publish(subject, v)
-			return ok
-		})
-		if ok != nil {
-			log.Panic("producer err:", ok)
-			return
+			if ok != nil {
+				log.Panic("producer err:", ok)
+				return
+			}
+			fmt.Print("\rPublished:", i+1)
+			if sleep > 0 {
+				time.Sleep(time.Millisecond * time.Duration(sleep))
+			}
 		}
-		fmt.Print("\rPublished:", i)
-		time.Sleep(time.Millisecond * 300)
+		fmt.Println("\n", repeat)
+		repeat--
 	}
 }

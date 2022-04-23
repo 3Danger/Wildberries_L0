@@ -4,13 +4,15 @@ import (
 	"awesomeProject/srcs/Backend/JsonStruct"
 	pq "awesomeProject/srcs/Backend/Postgresql"
 	"awesomeProject/srcs/Backend/Utils"
+	"fmt"
+	"github.com/nats-io/stan.go"
 	"log"
 	"time"
 )
 
 type CommonBackend struct {
 	DataBase    pq.Postgresql
-	Connect     *StanManager
+	ConnectStan *StanManager
 	JModelSlice JsonStruct.JsonSlice
 }
 
@@ -19,14 +21,14 @@ func BackEnd(Configs *Utils.Configs) *CommonBackend {
 	backend.DataBase.Connect(Configs, time.Second*3)
 	backend.JModelSlice = JsonStruct.NewJsonSlice()
 	ReadFromDataBase(&backend)
-	backend.Connect = NewConnect(Configs, "server-1")
+	backend.ConnectStan = NewConnect(Configs, "server-1")
 	ModelSubscribe(&backend, Configs.ModelSubj)
 	return &backend
 }
 
 func (c *CommonBackend) Close() {
 	c.DataBase.Disconnect()
-	c.Connect.UnscribeAll()
+	c.ConnectStan.UnscribeAll()
 }
 
 func ReadFromDataBase(bk *CommonBackend) {
@@ -49,4 +51,29 @@ func ReadFromDataBase(bk *CommonBackend) {
 			return
 		}
 	}
+}
+
+// ModelSubscribe Можно гораздо ускорить принятие данных путем создания -
+//- отдельных структур (для каждого клиента) со своими мютексами и слайсами
+func ModelSubscribe(bk *CommonBackend, subject string) {
+	fmt.Println("\r Count elem in cache before:", len(bk.JModelSlice.GetSlice()), "\b")
+	bk.ConnectStan.NewSubscribe(&subject, func(msg *stan.Msg) {
+		_, ok := JsonStruct.ParseBytes(msg.Data)
+		if ok != nil {
+			fmt.Println("incoming json model is invalid")
+			return
+		}
+		_, ok = bk.DataBase.GetRaw().Exec("INSERT INTO models (model) VALUES ($1)", msg.Data)
+		if ok != nil {
+			log.Println(ok)
+			return
+		}
+		bk.JModelSlice.Lock()
+		defer bk.JModelSlice.Unlock()
+		ok = bk.JModelSlice.AddFromData(msg.Data)
+		fmt.Println("Count elem in cache after: ", len(bk.JModelSlice.GetSlice()), "\b")
+		if ok != nil {
+			log.Println(ok)
+		}
+	})
 }
