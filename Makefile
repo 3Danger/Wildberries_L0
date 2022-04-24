@@ -11,8 +11,8 @@ $(PUB):
 	go build -o $@ Publisher/publisher.go
 
 fclean:
-	rm $(APP) $(PUB)
 	bash close.sh
+	rm $(APP) $(PUB)
 clean:
 	bash close.sh
 
