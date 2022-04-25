@@ -15,10 +15,9 @@ CREATE TABLE models
   model JSONB NOT NULL
 );
 ```
+___
 
-___ 
-
-### Запускаем следующим образом
+### Если с требованиями выше все ОК, то запускаем программу через скрипт следующим образом
 ```
 $ git clone https://github.com/3Danger/Wildberries_L0.git
 $ cd Wildberries_L0
