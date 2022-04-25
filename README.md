@@ -15,8 +15,7 @@ CREATE TABLE models
   model JSONB NOT NULL
 );
 ```
-
-___ 
+___
 
 ### Запускаем следующим образом
 ```
