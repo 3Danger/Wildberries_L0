@@ -14,7 +14,7 @@ fclean:
 	bash close.sh
 	rm $(APP) $(PUB)
 clean:
-	bash close.sh
+	@bash close.sh
 
 run: $(APP) $(PUB)
 	bash run.sh
