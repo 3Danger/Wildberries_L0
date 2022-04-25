@@ -17,7 +17,7 @@ func NewConnect(c *Utils.Configs) (stanManager *StanManager) {
 	stanManager = &StanManager{}
 	stanManager.connect, ok = stan.Connect(c.ClusterID, c.ClientID)
 	if ok != nil {
-		log.Panic(ok)
+		log.Fatal("Не удалось подключиться к nats-streaming-server")
 	}
 	fmt.Println("\033[34m"+"clusterID:"+"\033[0m", c.ClusterID+",",
 		"\033[34m"+"clientID:"+"\033[0m", c.ClientID,
