@@ -10,9 +10,9 @@ $(APP):
 $(PUB):
 	go build -o $@ Publisher/publisher.go
 
-fclean:
-	bash close.sh
-	rm $(APP) $(PUB)
+fclean: clean
+	@bash close.sh
+	@rm $(APP) $(PUB) 2> /dev/null &
 clean:
 	@bash close.sh
 
