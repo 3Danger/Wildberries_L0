@@ -1,5 +1,7 @@
 # Wildberries L0
 
+[Демонстрация на видео в youtube](https://www.youtube.com/watch?v=LpEGZIIkZwA)
+
 ### Параметры Базы данных для того что бы запустить это:
 ```
   username database = [csamuro]
